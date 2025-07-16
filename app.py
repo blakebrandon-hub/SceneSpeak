@@ -9,7 +9,8 @@ app = Flask(__name__)
 HUGGINGFACE_API_TOKEN = os.getenv("HF_TOKEN")
 
 HEADERS = {
-    "Authorization": f"Bearer {HUGGINGFACE_API_TOKEN}"
+    "Authorization": f"Bearer {HUGGINGFACE_API_TOKEN}",
+    "Content-Type": "application/octet-stream"
 }
 
 API_URL = "https://api-inference.huggingface.co/models/Salesforce/blip-image-captioning-base"
