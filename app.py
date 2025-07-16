@@ -40,6 +40,7 @@ def caption():
             result = response.json()
             # Defensive parsing (API may return a list or dict)
             caption = result[0]["generated_text"] if isinstance(result, list) else result.get("generated_text")
+            print(caption)
             return jsonify({'caption': caption})
         else:
             return jsonify({'error': 'Model error', 'details': response.text}), 500
