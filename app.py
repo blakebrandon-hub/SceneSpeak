@@ -6,13 +6,13 @@ import os
 app = Flask(__name__)
 
 # Optional: Set this to your actual Hugging Face API token
-HUGGINGFACE_API_TOKEN = "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" # or replace with your token directly
+HUGGINGFACE_API_TOKEN = "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" # or replace with your token directly
 
 HEADERS = {
     "Authorization": f"Bearer {HUGGINGFACE_API_TOKEN}"
 }
 
-API_URL = "https://huggingface.co/Salesforce/blip-image-captioning-base"
+API_URL = "https://api-inference.huggingface.co/models/Salesforce/blip-image-captioning-base"
 
 @app.route('/')
 def index():
