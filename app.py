@@ -12,7 +12,7 @@ HEADERS = {
     "Authorization": f"Bearer {HUGGINGFACE_API_TOKEN}"
 }
 
-API_URL = "https://huggingface.co/Salesforce/blip-image-captioning-base"
+API_URL = "https://api-inference.huggingface.co/models/Salesforce/blip-image-captioning-base"
 
 @app.route('/')
 def index():
