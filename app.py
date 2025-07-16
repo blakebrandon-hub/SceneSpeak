@@ -2,12 +2,18 @@ from flask import Flask, render_template, request, jsonify
 import base64
 import os
 import traceback
-from huggingface_hub import InferenceClient
+import requests
 
 app = Flask(__name__)
 
-# Initialize Hugging Face InferenceClient with your API token
-client = InferenceClient(token=os.getenv("HF_TOKEN"))
+# Hugging Face model endpoint and token
+HF_TOKEN = os.getenv("HF_TOKEN")
+API_URL = "https://api-inference.huggingface.co/models/Salesforce/blip-image-captioning-base"
+
+HEADERS = {
+    "Authorization": f"Bearer {HF_TOKEN}",
+    "Content-Type": "application/octet-stream"
+}
 
 @app.route('/')
 def index():
@@ -22,20 +28,25 @@ def caption():
         return jsonify({'error': 'No image provided'}), 400
 
     try:
-        # Decode the base64 image (strip the prefix)
+        # Strip base64 header and decode image
         image_bytes = base64.b64decode(image_data.split(",")[1])
 
-        # Use default Hugging Face captioning model (no need to specify model name)
-        output = client.image_to_text(image_bytes)
+        # Call Hugging Face model endpoint
+        response = requests.post(API_URL, headers=HEADERS, data=image_bytes)
 
-        # Output may be plain string or dict
-        caption = output if isinstance(output, str) else output.get("generated_text", str(output))
+        print("Response:", response.status_code, response.text)
 
-        return jsonify({'caption': caption})
+        if response.status_code == 200:
+            result = response.json()
+            caption = result[0]["generated_text"]
+            return jsonify({'caption': caption})
+        else:
+            return jsonify({'error': 'Model error', 'details': response.text}), 500
+
     except Exception as e:
         print("Error:", str(e))
         traceback.print_exc()
-        return jsonify({'error': 'Model error', 'details': str(e)}), 500
+        return jsonify({'error': 'Server error', 'details': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
