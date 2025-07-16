@@ -6,7 +6,7 @@ import os
 app = Flask(__name__)
 
 # Optional: Set this to your actual Hugging Face API token
-HUGGINGFACE_API_TOKEN = "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" # or replace with your token directly
+HUGGINGFACE_API_TOKEN = os.getenv("HF_TOKEN")
 
 HEADERS = {
     "Authorization": f"Bearer {HUGGINGFACE_API_TOKEN}"
