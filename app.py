@@ -23,11 +23,10 @@ def caption():
         return jsonify({'error': 'No image provided'}), 400
 
     try:
-        # Decode base64 image
         image_bytes = base64.b64decode(image_data.split(",")[1])
 
-        # Use the BLIP model to generate caption
-        output = client.image_to_text(image_bytes, model="Salesforce/blip-image-captioning-large")
+        # Don't specify model — InferenceClient chooses for you
+        output = client.image_to_text(image_bytes)
         caption = output if isinstance(output, str) else output.get("generated_text", str(output))
 
         return jsonify({'caption': caption})
@@ -35,6 +34,7 @@ def caption():
         print("Error:", str(e))
         traceback.print_exc()
         return jsonify({'error': 'Model error', 'details': str(e)}), 500
+
 
 if __name__ == '__main__':
     app.run(debug=True)
