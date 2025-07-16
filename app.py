@@ -1,16 +1,14 @@
 from flask import Flask, render_template, request, jsonify
-import base64, os, traceback, requests
+from transformers import VisionEncoderDecoderModel, ViTImageProcessor, AutoTokenizer
+from PIL import Image
+import base64, io, traceback
 
 app = Flask(__name__)
 
-HF_TOKEN = os.getenv("HF_TOKEN")
-# Use blip2-flan-t5-xl, public inference endpoint
-API_URL = "https://api-inference.huggingface.co/models/Salesforce/blip2-flan-t5-xl"
-
-HEADERS = {
-    "Authorization": f"Bearer {HF_TOKEN}",
-    "Content-Type": "application/octet-stream"
-}
+# Load the captioning model (Vit-GPT2) once at startup
+model = VisionEncoderDecoderModel.from_pretrained("nlpconnect/vit-gpt2-image-captioning")
+feature_extractor = ViTImageProcessor.from_pretrained("nlpconnect/vit-gpt2-image-captioning")
+tokenizer = AutoTokenizer.from_pretrained("nlpconnect/vit-gpt2-image-captioning")
 
 @app.route('/')
 def index():
@@ -18,26 +16,26 @@ def index():
 
 @app.route('/caption', methods=['POST'])
 def caption():
-    data = request.get_json()
-    img = data.get("image_base64")
-    if not img:
-        return jsonify({'error': 'No image provided'}), 400
-
     try:
-        image_bytes = base64.b64decode(img.split(",",1)[1])
-        response = requests.post(API_URL, headers=HEADERS, data=image_bytes)
-        print("Response:", response.status_code, response.text)
+        image_data = request.get_json().get('image_base64')
+        if not image_data:
+            return jsonify({'error': 'No image provided'}), 400
 
-        if response.status_code == 200:
-            caption = response.json()[0].get("generated_text", "")
-            return jsonify({'caption': caption})
-        else:
-            return jsonify({'error': 'Model error', 'details': response.text}), 500
+        # Decode the image
+        base64_str = image_data.split(",")[1]
+        image = Image.open(io.BytesIO(base64.b64decode(base64_str))).convert("RGB")
+
+        # Preprocess
+        pixel_values = feature_extractor(images=image, return_tensors="pt").pixel_values
+        out = model.generate(pixel_values, max_length=16, num_beams=4)
+        caption = tokenizer.decode(out[0], skip_special_tokens=True)
+
+        return jsonify({'caption': caption})
 
     except Exception as e:
         print("Error:", e)
         traceback.print_exc()
         return jsonify({'error': 'Server error', 'details': str(e)}), 500
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(debug=True)
