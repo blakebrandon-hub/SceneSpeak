@@ -26,17 +26,27 @@ def caption():
     if not image_data:
         return jsonify({'error': 'No image provided'}), 400
 
-    # Remove header (e.g. "data:image/png;base64,...")
-    image_base64 = image_data.split(",")[1]
-    image_bytes = base64.b64decode(image_base64)
+    try:
+        # Remove base64 prefix and decode
+        image_base64 = image_data.split(",")[1]
+        image_bytes = base64.b64decode(image_base64)
 
-    response = requests.post(API_URL, headers=HEADERS, files={"file": image_bytes})
-    
-    if response.status_code == 200:
-        caption = response.json()[0]["generated_text"]
-        return jsonify({'caption': caption})
-    else:
-        return jsonify({'error': 'Model error', 'details': response.text}), 500
+        # Send raw image bytes as payload
+        response = requests.post(API_URL, headers=HEADERS, data=image_bytes)
+
+        print("Response:", response.status_code, response.text)
+
+        if response.status_code == 200:
+            result = response.json()
+            # Defensive parsing (API may return a list or dict)
+            caption = result[0]["generated_text"] if isinstance(result, list) else result.get("generated_text")
+            return jsonify({'caption': caption})
+        else:
+            return jsonify({'error': 'Model error', 'details': response.text}), 500
+
+    except Exception as e:
+        return jsonify({'error': 'Server error', 'details': str(e)}), 500
+
 
 if __name__ == '__main__':
     app.run(debug=True)
