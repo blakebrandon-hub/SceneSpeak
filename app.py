@@ -13,7 +13,7 @@ HEADERS = {
     "Content-Type": "application/octet-stream"
 }
 
-API_URL = "https://api-inference.huggingface.co/models/Salesforce/blip-image-captioning-base"
+API_URL = "https://api-inference.huggingface.co/models/Salesforce/blip-image-captioning-large"
 
 @app.route('/')
 def index():
