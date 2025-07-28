@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>SceneSpeak</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:,">
+
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    body {
+      padding-top: 4rem;
+    }
+    #preview {
+      max-width: 100%;
+      display: none;
+      margin-top: 1rem;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body class="bg-light text-center">
+  <div class="container">
+    <h1 class="display-5 mb-4">🎯 SceneSpeak</h1>
+    <p class="lead">Upload an image and SceneSpeak will describe it <em>and say it out loud</em> using AI.</p>
+
+    <div class="card p-4 shadow-sm mx-auto" style="max-width: 500px;">
+
+      <input type="file" class="form-control mb-3" id="imageInput" accept="image/*">
+
+      <p id="caption" class="fw-semibold text-muted">🔄 Loading model...</p>
+      <img id="preview" class="img-fluid" alt="Preview">
+      <p class="text-muted small mt-3">
+  Powered by an AI model trained to describe simple everyday scenes — it works best with clear, recognizable objects like people, animals, or common items.
+</p>
+    </div>
+
+
+
+  </div>
+
+  <script type="module">
+    import { pipeline } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@latest';
+
+    const imageInput = document.getElementById('imageInput');
+    const captionEl = document.getElementById('caption');
+    const previewEl = document.getElementById('preview');
+
+    // Load model on page load
+    captionEl.textContent = '🔄 Loading model...';
+    const captioner = await pipeline('image-to-text', 'Xenova/vit-gpt2-image-captioning', {
+      cacheDir: false
+    });
+    captionEl.textContent = '✅ Model ready. Upload an image.';
+
+    imageInput.addEventListener('change', async (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const imageURL = URL.createObjectURL(file);
+      previewEl.src = imageURL;
+      previewEl.style.display = 'block';
+      captionEl.textContent = '🧠 Generating caption...';
+
+      try {
+        const result = await captioner(imageURL);
+        const caption = result[0].generated_text;
+
+        captionEl.textContent = '📝 ' + caption;
+
+        // 🔊 Speak it out loud
+        const utterance = new SpeechSynthesisUtterance(caption);
+        utterance.lang = 'en-US';
+        speechSynthesis.speak(utterance);
+      } catch (err) {
+        captionEl.textContent = '❌ Error: ' + err.message;
+        console.error(err);
+      }
+    });
+  </script>
+</body>
+</html>
